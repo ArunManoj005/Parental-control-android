@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Parental control</string>
+    <string name="accessibility_description">This service is used to lock apps and monitor screen usage.</string>
+</resources>
