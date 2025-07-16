@@ -61,7 +61,7 @@ jobs:
           firebase appdistribution:distribute app/build/outputs/apk/debug/app-debug.apk \
             --app 1:811773821154:android:5d2b714329c649d12b5ebb \
             --token "${{ secrets.FIREBASE_TOKEN }}" \
-            --groups "testers"
+            --testers "arunmanoj.in@gmail.com"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
