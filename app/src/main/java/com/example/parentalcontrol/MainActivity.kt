@@ -20,7 +20,11 @@ import androidx.core.content.ContextCompat
 import com.example.parentalcontrol.ui.theme.ParentalControlTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.ui.Alignment
-
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import java.util.*
+import java.util.concurrent.TimeUnit
+import com.example.parentalcontrol.AppUsageWorker
 class MainActivity : ComponentActivity() {
 
     private val SMS_PERMISSION_CODE = 101
@@ -41,6 +45,10 @@ class MainActivity : ComponentActivity() {
                 UsageTrackerScreen(this)
             }
         }
+        if (hasSmsPermission()) {
+            scheduleDailyUsageUpload(this)
+        }
+
     }
 
     // ✅ Check SMS permissions
@@ -129,18 +137,23 @@ fun hasUsageAccessPermission(context: Context): Boolean {
     return stats != null && stats.isNotEmpty()
 }
 
-fun getTopUsedApps(context: Context): List<String> {
-    val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-    val endTime = System.currentTimeMillis()
-    val startTime = endTime - 1000 * 60 * 60 * 24 // last 24 hours
-    val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime)
 
-    return stats
-        .filter { it.totalTimeInForeground > 0 }
-        .sortedByDescending { it.totalTimeInForeground }
-        .take(5)
-        .map {
-            val minutes = it.totalTimeInForeground / 1000 / 60
-            "${it.packageName}: ${minutes} min"
-        }
+
+fun scheduleDailyUsageUpload(context: Context) {
+    val now = Calendar.getInstance()
+    val target = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 20) // 8 PM
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        if (before(now)) add(Calendar.DATE, 1)
+    }
+
+    val delay = target.timeInMillis - now.timeInMillis
+
+    val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
+        .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+        .addTag("dailyUsage")
+        .build()
+
+    WorkManager.getInstance(context).enqueue(workRequest)
 }

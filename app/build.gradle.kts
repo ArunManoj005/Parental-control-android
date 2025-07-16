@@ -8,6 +8,14 @@ plugins {
 android {
     namespace = "com.example.parentalcontrol"
     compileSdk = 35
+    signingConfigs {
+        create("release") {
+            storeFile = file("../keystore/release.jks") // path to your keystore
+            storePassword = "MyAppSecure123"
+            keyAlias = "releasekey"
+            keyPassword = "MyAppSecure123"
+        }
+    }
 
     defaultConfig {
         applicationId = "com.example.parentalcontrol"
@@ -17,11 +25,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -38,6 +48,7 @@ android {
     buildFeatures {
         compose = true
     }
+
 }
 
 dependencies {
@@ -58,4 +69,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
 }
