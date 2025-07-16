@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -44,7 +45,6 @@ jobs:
           sed -i "s/versionCode = .*/versionCode = ${VERSION_CODE}/" app/build.gradle.kts
           sed -i 's/versionName = ".*"/versionName = "'"${VERSION_NAME}"'"/' app/build.gradle.kts
 
-
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
@@ -61,7 +61,7 @@ jobs:
           firebase appdistribution:distribute app/build/outputs/apk/debug/app-debug.apk \
             --app 1:811773821154:android:5d2b714329c649d12b5ebb \
             --token "${{ secrets.FIREBASE_TOKEN }}" \
-            --testers "arunmanoj.in@gmail.com"
+            --testers "your-email@example.com"  # or --groups "testers"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -70,6 +70,8 @@ jobs:
           name: Release v1.0.${{ github.run_number }}
           body: Auto-generated release from CI
           files: app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}
 
       - name: Notify via Telegram
         if: success()
