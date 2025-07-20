@@ -11,14 +11,19 @@ import java.util.*
 class AppUsageWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
     override fun doWork(): Result {
         val context = applicationContext
+        if (!hasUsageAccessPermission(context)) {
+            return Result.retry()
+        }
+
         val usageList = getTopUsedApps(context)
 
         val ref = FirebaseDatabase.getInstance().getReference("daily_app_usage")
         val phoneId = android.os.Build.SERIAL ?: "UnknownDevice"
-        val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val key = "$phoneId/$date"
+        val dateTime = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.getDefault()).format(Date())
+        val key = "$phoneId/$dateTime"
 
         ref.child(key).setValue(usageList)
         return Result.success()
     }
+
 }

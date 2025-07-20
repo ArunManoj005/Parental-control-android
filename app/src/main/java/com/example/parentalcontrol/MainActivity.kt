@@ -22,9 +22,14 @@ import com.google.firebase.FirebaseApp
 import androidx.compose.ui.Alignment
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import java.util.*
-import java.util.concurrent.TimeUnit
+import java.util.Calendar
+import java.util.Locale
+import java.util.Date
+import java.text.SimpleDateFormat
 import com.example.parentalcontrol.AppUsageWorker
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.ExistingPeriodicWorkPolicy
+import java.util.concurrent.TimeUnit
 class MainActivity : ComponentActivity() {
 
     private val SMS_PERMISSION_CODE = 101
@@ -35,9 +40,11 @@ class MainActivity : ComponentActivity() {
         // ✅ Firebase initialization
         FirebaseApp.initializeApp(this)
 
-        // ✅ Request SMS permission
         if (!hasSmsPermission()) {
             requestSmsPermission()
+        } else {
+            // 🔁 Schedule periodic upload only if permission is granted
+            schedulePeriodicUsageUpload(this)
         }
 
         setContent {
@@ -46,8 +53,9 @@ class MainActivity : ComponentActivity() {
             }
         }
         if (hasSmsPermission()) {
-            scheduleDailyUsageUpload(this)
+            schedulePeriodicUsageUpload(this)
         }
+
 
     }
 
@@ -139,21 +147,15 @@ fun hasUsageAccessPermission(context: Context): Boolean {
 
 
 
-fun scheduleDailyUsageUpload(context: Context) {
-    val now = Calendar.getInstance()
-    val target = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 20) // 8 PM
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        if (before(now)) add(Calendar.DATE, 1)
-    }
-
-    val delay = target.timeInMillis - now.timeInMillis
-
-    val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
-        .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-        .addTag("dailyUsage")
+fun schedulePeriodicUsageUpload(context: Context) {
+    val workRequest = PeriodicWorkRequestBuilder<AppUsageWorker>(3, TimeUnit.HOURS)
+        .addTag("periodicUsageUpload")
         .build()
 
-    WorkManager.getInstance(context).enqueue(workRequest)
+
+    WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+        "periodicUsageUploader",
+        androidx.work.ExistingPeriodicWorkPolicy.UPDATE,
+        workRequest
+    )
 }
